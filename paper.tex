@@ -63,7 +63,7 @@
 % should be used if it is desired that the figures are to be displayed in
 % draft mode.
 %
-\documentclass[conference]{IEEEtran}
+\documentclass[10pt,conference]{IEEEtran}
 % Add the compsoc option for Computer Society conferences.
 %
 % If IEEEtran.cls has not been installed into the LaTeX system files,
@@ -352,28 +352,19 @@
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-\title{Bare Demo of IEEEtran.cls for Conferences}
-
+\title{Critic: Designing a Sound Static Analyzer for Chisel}
 
 % author names and affiliations
 % use a multiple column layout for up to three different
 % affiliations
-\author{\IEEEauthorblockN{Michael Shell}
-\IEEEauthorblockA{School of Electrical and\\Computer Engineering\\
-Georgia Institute of Technology\\
-Atlanta, Georgia 30332--0250\\
-Email: http://www.michaelshell.org/contact.html}
+\author{\IEEEauthorblockN{Ethan A. Kuefner, Timothy Sherwood, Ben Hardekopf}
+\IEEEauthorblockA{University of California, Santa Barbara\\
+\{eakuefner, sherwood, benh\}@cs.ucsb.edu
+}
 \and
-\IEEEauthorblockN{Homer Simpson}
-\IEEEauthorblockA{Twentieth Century Fox\\
-Springfield, USA\\
-Email: homer@thesimpsons.com}
-\and
-\IEEEauthorblockN{James Kirk\\ and Montgomery Scott}
-\IEEEauthorblockA{Starfleet Academy\\
-San Francisco, California 96678-2391\\
-Telephone: (800) 555--1212\\
-Fax: (888) 555--1212}}
+\IEEEauthorblockN{John Sarracino}
+\IEEEauthorblockA{Harvey Mudd College\\
+jsarracino@g.hmc.edu}}
 
 % conference papers do not typically use \thanks and this command
 % is locked out in conference mode. If really needed, such as for
@@ -410,10 +401,10 @@ Fax: (888) 555--1212}}
 \maketitle
 
 
-\begin{abstract}
+%\begin{abstract}
 %\boldmath
-The abstract goes here.
-\end{abstract}
+%The abstract goes here.
+%\end{abstract}
 % IEEEtran.cls defaults to using nonbold math in the Abstract.
 % This preserves the distinction between vectors and scalars. However,
 % if the conference you are submitting to favors bold math in the abstract,
@@ -440,24 +431,12 @@ The abstract goes here.
 
 \section{Introduction}
 % no \IEEEPARstart
-This demo file is intended to serve as a ``starter file''
-for IEEE conference papers produced under \LaTeX\ using
-IEEEtran.cls version 1.7 and later.
-% You must have at least 2 lines in the paragraph with the drop letter
-% (should never be an issue)
-I wish you the best of success.
-
-\hfill mds
- 
-\hfill January 11, 2007
-
-\subsection{Subsection Heading Here}
-Subsection text here.
-
-
-\subsubsection{Subsubsection Heading Here}
-Subsubsection text here.
-
+Static analysis for hardware designs is a useful augmentation to the
+traditional testbench validation approach commonly undertaken by
+hardware designers. High assurance settings such as flight systems, defense, and medicine
+impose strong behavioral requirements on systems, and static analysis
+is one way to meet such requirements. By emphasizing soundness in the design
+of a static analyzer, it is possible to provide provable guarantees about systems being analyzed.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
