@@ -455,9 +455,12 @@ stronger guarantees than non-exhaustive testing.
 While static analysis seems attractive, it is also difficult;
 in fact, Rice's theorem states that any non-trivial property of
 programs is undecidable. Many approaches exist to deal with this problem,
-but in particular, we appeal to the framework of abstract interpretation,
+but in particular, we appeal to the framework of abstract interpretation~\cite{cc77},
 which was originally designed as a technique to perform sound analyses
-of programs. Abstract interpretation is well-known in the programming
+of programs. In abstract interpretation, a formal concrete semantics for a
+programming language is given a mathematical correspondance to an abstract
+semantics that soundly approximates the behavior of programs.
+Abstract interpretation is well-known in the programming
 languages community and has even been used commercially in tools like
 {\sc Astr\'ee}, which has successfully verified C code for a variety
 of avionics software.
@@ -477,9 +480,11 @@ unlike either VHDL or Verilog. This reins in the size of the language and
 and allows us to more easily reason about the language and its compilation process
 as a whole.
 
-In this work, we describe the architecture of Critic, an abstract interpreter
-we have been designing for Chisel. As well, we discuss some challenges that we have
-faced in implementing Critic and how we have addressed these.
+This work is the latest in a series of collaborations between the Programming Languages
+Lab and the ArchLab towards applying techniques in programming languages to provably
+correct hardware design. In this work, we describe the architecture of Critic, an abstract
+interpreter we have been designing for Chisel, and our plans for applying it to proving
+particular invariants of hardware designs.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
@@ -661,10 +666,12 @@ Fortunately, the backend architecture is extensible, so that users can write the
 own backends. We take advantage of this by defining our own backend, which converts
 the Chisel DAG into the Critic intermediate representation (IR), which is essentially
 a cleaner version of the Chisel DAG which we have designed to be suitable for program
-analysis. 
-
-\begin{figure}
-\end{figure}
+analysis. The process of translating Chisel to Critic is more difficult than it may seem,
+since Chisel is still a research project under active development. As well, although both
+projects are implemented in Scala, the developers of Chisel have used an object-oriented,
+imperative style, whereas we prefer a more functional approach. We have had to rectify these
+issues by reading prose descriptions of Chisel and frequently by deferring to the actual
+source code for Chisel.
 
 The abstract syntax of our IR is shown in Figure~\ref{fig:syntax}.
 The IR mostly mirrors the Chisel IR, providing all of the same major nodes, with a numebr of optimizations.
@@ -697,24 +704,51 @@ N \in \Node &::= \ell^e_1 \bop \ell^e_2 \Rightarrow \ell^e_3 \alt \uop\; \ell^e_
 \label{fig:syntax}
 \end{figure}
 
+\subsection{Abstract interpretation}
 To perform abstract interpretation, we begin by formalizing the concrete
 semantics of the language. We use operational semantics, which specify
 the behavior of the language as a state transition system, potentially infinite,
-which operates on a collection of concrete domains representing things
-like numbers, strings, or addresses. After we have fixed the concrete semantics,
+which operates on a collection of concrete domains representing values and components
+of the state. In the particular case of Critic, our state consists of a static representation
+of the DAG, together with a description of the current values of memories and registers, as well
+as the values held by the wires in the circuit and a program counter. The DAG is organized
+in a topological order based on data dependencies, and the program counter represents the interpreter's
+current node of interest in the topological order. We then formalize the state transitions in a function
+$\mathcal F\colon\State\to\State$ which matches deterministically on the components of the state to decide
+what to do. For example, if the node at the current program counter is a mux, the semantics says to read
+in its inputs and select one or the other based on the value of the select bit.
+
+After we have fixed the concrete semantics,
 we derive an abstract semantics which finitizes the state transition system
 by defining a series of so-called abstract domains, together with a pair of functions
 called abstraction and concretization that connect the concrete semantics to the abstract
-semantics. Abstract interpretation requires that these functions define an \emph{overapproximation},
-which is formalized as follows.
+semantics. The main difference between the abstract semantics and the concrete semantics is that
+the state transition system specified by the abstract semantics is nondeterminstic; that is, it
+can be viewed as a function $\mathcal F^\sharp\colon \State^\sharp\to\mathcal P(\State^\sharp)$. The precision of the
+analysis is based on the design of the abstract domains, where a key decision that has to be made
+regarding how much information about these sets of states, which could grow exponentially in the worst
+case, to discard.
 
-\begin{definition}
-Let $\mathcal L, \mathcal L^\sharp$ be partially ordered sets, and let $\alpha\colon
-\mathcal L \to \mathcal L^\sharp, \gamma\colon \mathcal L^\sharp \to \mathcal L$. The pair $\alpha,\gamma$
-is an \emph{overapproximation} if for all $x\in \mathcal L$, we have $x \in \gamma(\alpha(x))$ and similarly
-for 
-\end{definition}
+The advantage of specifying the semantics in the form 
+described above, which we refer to as the \emph{small-step abstract machine} style,
+is principally in the derivation of the abstract semantics. David Van Horn and Matt Might
+show~\cite{vanhorn10} that it is straightforward to derive a computable abstract semantics
+from an arbitrary small-step abstract machine semantics. We apply their techniques in
+constructing the abstract semantics to be applied in this work.
 
+\section{Future Directions}
+
+We are currently hard at work on our Scala implementation of the concrete and abstract
+toolchains for Critic, which we hope to apply to analyzing notions such as a new kind of
+deadlock freedom for network-on-chip designs. As well, it may be interesting to use our
+analysis to target programs where previous attempts at applying formal methods to analyze
+properties such as secure information flow fell short.
+
+\section{Conclusion}
+
+In this extended abstract we have detailed Critic, a design for an abstract interpreter
+based on Chisel, a new hardware construction language from UC Berkeley. We described
+our process for working with Chisel, as well as aspects of the design of our analyzer.
 
 % conference papers do not normally have an appendix
 
@@ -743,9 +777,7 @@ for
 % (used to reserve space for the reference number labels box)
 \begin{thebibliography}{1}
 
-\bibitem{IEEEhowto:kopka}
-H.~Kopka and P.~W. Daly, \emph{A Guide to \LaTeX}, 3rd~ed.\hskip 1em plus
-  0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
+\item \note{Bibliography goes here.}
 
 \end{thebibliography}
 
