@@ -73,7 +73,6 @@
 
 
 
-
 % Some very useful LaTeX packages include:
 % (uncomment the ones you want to load)
 
@@ -170,7 +169,12 @@
 
 % *** MATH PACKAGES ***
 %
-%\usepackage[cmex10]{amsmath}
+\usepackage[cmex10]{amsmath}
+\usepackage{amsthm}
+\usepackage[x11names, rgb]{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{snakes,arrows,shapes}
 % A popular package from the American Mathematical Society that provides
 % many useful and powerful commands for dealing with mathematics. If using
 % it, be sure to load this package with the cmex10 option to ensure that
@@ -334,6 +338,7 @@
 % \url{my_url_here}.
 
 
+\input{macros.tex}
 
 
 
@@ -431,12 +436,50 @@ jsarracino@g.hmc.edu}}
 
 \section{Introduction}
 % no \IEEEPARstart
-Static analysis for hardware designs is a useful augmentation to the
-traditional testbench validation approach commonly undertaken by
-hardware designers. High assurance settings such as flight systems, defense, and medicine
-impose strong behavioral requirements on systems, and static analysis
-is one way to meet such requirements. By emphasizing soundness in the design
-of a static analyzer, it is possible to provide provable guarantees about systems being analyzed.
+For hardware designers, testing is commonplace as a way to ensure
+that hardware designs meet their specifications. However, in
+high assurance settings such as flight systems, medicine, and
+defense, strong guarantees on the behavior of a system may be
+required. To achieve such guarantees using testing can be tedious
+for sufficiently large designs, since achieving suitable test
+coverage can require a potentially exponential number of test inputs.
+Formal static analysis provides an alternative to testing in which
+mathematical models are reasoned about in order to provide provable
+guarantees about the operation of a system. Additionally, we can
+design analyses to be \emph{sound}, which means that they will only
+return answers which are guaranteed to be true. Thus, a static analysis-based 
+approach to ensuring conformance of designs can
+remove overhead associated with exhaustive testing as well as potentially provide
+stronger guarantees than non-exhaustive testing.
+
+While static analysis seems attractive, it is also difficult;
+in fact, Rice's theorem states that any non-trivial property of
+programs is undecidable. Many approaches exist to deal with this problem,
+but in particular, we appeal to the framework of abstract interpretation,
+which was originally designed as a technique to perform sound analyses
+of programs. Abstract interpretation is well-known in the programming
+languages community and has even been used commercially in tools like
+{\sc Astr\'ee}, which has successfully verified C code for a variety
+of avionics software.
+
+Abstract interpretation can be applied to a hardware design setting through
+the observation that hardware description languages are essentially a particular
+class of
+domain-specific languages (DSLs), that is, programming languages designed to target
+a specific application. Chisel~\cite{asanovic12} is a new environment for
+designing and testing hardware that has been designed as an embedded DSL on top
+of the Scala programming language. For hardware designers, it provides
+advantages over existing HDLs by bringing advanced features of Scala, such
+as higher-order functions and object oriented programming, to the hardware
+design landscape. As well, it presents a good opportunity for analysis designers,
+since Chisel has been explicitly designed from the ground up for synthesis, 
+unlike either VHDL or Verilog. This reins in the size of the language and 
+and allows us to more easily reason about the language and its compilation process
+as a whole.
+
+In this work, we describe the architecture of Critic, an abstract interpreter
+we have been designing for Chisel. As well, we discuss some challenges that we have
+faced in implementing Critic and how we have addressed these.
 
 % An example of a floating figure using the graphicx package.
 % Note that \label must occur AFTER (or within) \caption.
@@ -520,25 +563,160 @@ of a static analyzer, it is possible to provide provable guarantees about system
 % footnotes above bottom floats. This can be corrected via the \fnbelowfloat
 % command of the stfloats package.
 
+\newtheorem{definition}{Definition}
 
+\section{Design}
 
-\section{Conclusion}
-The conclusion goes here.
+In this section we outline first the process of extracting a hardware description
+amenable to analysis from Chisel, and second, the method we use to perform analysis
+on it.
 
+\subsection{Chisel}
+Chisel itself is merely a set of data structures which hardware designers
+instantiate in a particular way to build components. These data structures
+together represent a directed acyclic graph (DAG) of nodes such as binary operations,
+multiplexers, and
+memory reads and writes. Chisel allows extraction
+of C++ or Verilog from this DAG, for use in simulation or synthesis. 
+When a designer ``programs'' in Chisel, she is actually programming in Scala.
+Figure~\cite{fig:overview} gives an overview of the Chisel/Critic workflow.
 
+\begin{figure}
+\begin{center}
+\begin{tikzpicture}[>=latex',line join=bevel,scale=0.63,]
+  \pgfsetlinewidth{1bp}
+%%
+\pgfsetcolor{black}
+  % Edge: Java Bytecode -> C++
+  \draw [->] (86.38bp,179.61bp) .. controls (75.363bp,166.51bp) and (60.105bp,148.37bp)  .. (41.338bp,126.05bp);
+  % Edge: Chisel/Scala -> Java Bytecode
+  \draw [->] (101bp,269.61bp) .. controls (101bp,257.24bp) and (101bp,240.37bp)  .. (101bp,216.05bp);
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (130.55bp,243bp) node {compile};
+  % Edge: Java Bytecode -> Verilog
+  \draw [->] (101bp,179.61bp) .. controls (101bp,167.24bp) and (101bp,150.37bp)  .. (101bp,126.05bp);
+  % Edge: Critic IR -> Analysis Result
+  \draw [->] (180bp,89.614bp) .. controls (180bp,77.24bp) and (180bp,60.369bp)  .. (180bp,36.05bp);
+  \draw (209.37bp,63bp) node {analyze};
+  % Edge: Java Bytecode -> Critic IR
+  \draw [->] (116.61bp,179.61bp) .. controls (128.37bp,166.51bp) and (144.66bp,148.37bp)  .. (164.69bp,126.05bp);
+  \draw (162.33bp,153bp) node {run};
+  % Node: Critic IR
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (213bp,126bp) -- (147bp,126bp) -- (147bp,90bp) -- (213bp,90bp) -- cycle;
+  \draw (180bp,108bp) node {Critic IR};
+\end{scope}
+  % Node: C++
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (54bp,126bp) -- (0bp,126bp) -- (0bp,90bp) -- (54bp,90bp) -- cycle;
+  \draw (27bp,108bp) node {C++};
+\end{scope}
+  % Node: Java Bytecode
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (149bp,216bp) -- (53bp,216bp) -- (53bp,180bp) -- (149bp,180bp) -- cycle;
+  \draw (101bp,198bp) node {Java Bytecode};
+\end{scope}
+  % Node: Chisel/Scala
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (143bp,306bp) -- (59bp,306bp) -- (59bp,270bp) -- (143bp,270bp) -- cycle;
+  \draw (101bp,288bp) node {Chisel/Scala};
+\end{scope}
+  % Node: Verilog
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (129bp,126bp) -- (73bp,126bp) -- (73bp,90bp) -- (129bp,90bp) -- cycle;
+  \draw (101bp,108bp) node {Verilog};
+\end{scope}
+  % Node: Analysis Result
+\begin{scope}
+  \definecolor{strokecol}{rgb}{0.0,0.0,0.0};
+  \pgfsetstrokecolor{strokecol}
+  \draw (232bp,36bp) -- (128bp,36bp) -- (128bp,0bp) -- (232bp,0bp) -- cycle;
+  \draw (180bp,18bp) node {Analysis Result};
+\end{scope}
+%
+\end{tikzpicture}
+\end{center}
+\caption{Chisel/Critic workflow.}
+\label{fig:overview}
+\end{figure}
+
+To extract a design from a Chisel program, a designer must first compile the program
+using the Scala compiler, producing Java bytecode. At runtime, the designer selects
+a ``backend'', either C++ or Verilog, and runs the Java bytecode, passing a flag for
+their selected backend. Chisel then elaborates the design, leaving a
+flat Chisel data structure that can be traversed for compilation. The specific backend
+then traverses the data structure and outputs corresponding C++ or Verilog.
+Fortunately, the backend architecture is extensible, so that users can write their
+own backends. We take advantage of this by defining our own backend, which converts
+the Chisel DAG into the Critic intermediate representation (IR), which is essentially
+a cleaner version of the Chisel DAG which we have designed to be suitable for program
+analysis. 
+
+\begin{figure}
+\end{figure}
+
+The abstract syntax of our IR is shown in Figure~\ref{fig:syntax}.
+The IR mostly mirrors the Chisel IR, providing all of the same major nodes, with a numebr of optimizations.
+It describes a program in the Critic IR as a product of sequences of nodes, edges, memory definitions,
+and register definitions. Memories have positive edge-triggered writes and combinational reads, registers
+delay their inputs by a clock cycle, and the $\downarrow$-subscripted unary operators denote componentwise
+operation over bit vectors. 
+For example, the semantics of the unary operator $\kw{and}_\downarrow$ are to perform a boolean AND
+over all the bits in the input vector. 
+
+\begin{figure}
+\small
+\begin{gather*}
+  n \in \N \qquad b \in \Bool \qquad \ell^e \in \EdgeLabel \\
+ \ell^r \in \RegLabel \qquad \ell^m \in \MemLabel
+\end{gather*}
+\nvsp
+\begin{align*}
+p \in \Prog &::= \vec{N} \; \vec{e} \, \, \overrightarrow{mem} \\
+N \in \Node &::= \ell^e_1 \bop \ell^e_2 \Rightarrow \ell^e_3 \alt \uop\; \ell^e_1  \Rightarrow \ell^e_2 \alt \ell^e_1 \;\Mux\;\ell^e_2 \;\ell^e_3 \Rightarrow \ell^e_4 \\
+&\lalt \MemRead \;\ell^m \; \ell^e_1 \To \ell^e_2 \alt 
+\MemWrite \; \ell^m \; \ell^e_1 \; \ell^e_2 \; \ell^e_3 \To \ell^e_4 \\
+&\lalt \Reg \;  \ell^r \;  \ell^e_1 \;  \Rightarrow \ell^e_2 \alt \Input \, \,  \ell^e \alt 
+\Output \, \,  \ell^e \alt \Literal \, \,  \vec{b} \Rightarrow \ell^e \\
+\bop \in \BinOp &::= \kw{and} \alt \kw{or} \alt \xor \alt \wedge \alt \vee \alt \equiv \alt \not\equiv \alt \rsh \alt \lsh \\
+&\lalt \cat \alt + \alt - \alt \times \alt < \alt \leq \\
+\uop \in \UnOp &::= - \alt \sim \alt \kw{and}_\downarrow \alt \kw{or}_\downarrow \alt \xor_\downarrow \alt \neg \alt n_1 .. n_2 \\
+\end{align*}
+\caption{Critic IR Abstract Syntax. \note{Need to add reg, mem, edge definitions.}}
+\label{fig:syntax}
+\end{figure}
+
+To perform abstract interpretation, we begin by formalizing the concrete
+semantics of the language. We use operational semantics, which specify
+the behavior of the language as a state transition system, potentially infinite,
+which operates on a collection of concrete domains representing things
+like numbers, strings, or addresses. After we have fixed the concrete semantics,
+we derive an abstract semantics which finitizes the state transition system
+by defining a series of so-called abstract domains, together with a pair of functions
+called abstraction and concretization that connect the concrete semantics to the abstract
+semantics. Abstract interpretation requires that these functions define an \emph{overapproximation},
+which is formalized as follows.
+
+\begin{definition}
+Let $\mathcal L, \mathcal L^\sharp$ be partially ordered sets, and let $\alpha\colon
+\mathcal L \to \mathcal L^\sharp, \gamma\colon \mathcal L^\sharp \to \mathcal L$. The pair $\alpha,\gamma$
+is an \emph{overapproximation} if for all $x\in \mathcal L$, we have $x \in \gamma(\alpha(x))$ and similarly
+for 
+\end{definition}
 
 
 % conference papers do not normally have an appendix
-
-
-% use section* for acknowledgement
-\section*{Acknowledgment}
-
-
-The authors would like to thank...
-
-
-
 
 
 % trigger a \newpage just before the given reference
