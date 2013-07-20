@@ -1,0 +1,8 @@
+digraph G {
+  node [shape=rectangle];
+  "Chisel/Scala" -> "Java Bytecode" [label="compile"];
+  "Java Bytecode" -> "C++";
+  "Java Bytecode" -> "Verilog";
+  "Java Bytecode" -> "Critic IR" [label="run"];
+  "Critic IR" -> "Analysis Result" [label="analyze"];
+}

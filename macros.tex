@@ -1,0 +1,89 @@
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+%\usepackage{bbold}
+\usepackage{xspace}
+\usepackage{array}
+\usepackage[figuresleft]{rotating}
+\usepackage{multirow}
+\usepackage{color}
+
+\newcolumntype{R}{>{$}r<{$}}
+\newcolumntype{L}{>{$}l<{$}}
+\newcolumntype{C}{>{$}c<{$}}
+
+\newcommand{\mtt}[1]{\ensuremath{\mathit{#1}}}
+\newcommand{\anywhere}[1]{\ensuremath{\mbox{#1}}}
+\newcommand{\kw}[1]{\anywhere{\sffamily{\bfseries\small {#1}}}}
+\newcommand{\red}[1]{{\color{red}{#1}}}
+\newcommand{\note}[1]{\red{\textbf{[#1]}}}
+\newcommand{\nvsp}{\vspace{-.1in}}
+
+\newcommand{\alt}{\ \mid\ }
+\newcommand{\lalt}{\ \ \ \alt}
+
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\B}{\mathbb{B}}
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\Oo}{\mathcal{O}}
+\newcommand{\Set}{\mathcal{P}}
+
+\newcommand{\step}{\ensuremath{\mathcal{F}}\xspace}
+
+\newcommand{\To}{\Rightarrow}
+
+\newcommand{\Prog}{\ensuremath{\mtt{Prog}\xspace}}
+\newcommand{\BitVector}{\ensuremath{\mtt{BitVector}\xspace}}
+\newcommand{\MemUnit}{\ensuremath{\mtt{MemUnit}\xspace}}
+\newcommand{\RegVals}{\ensuremath{\mtt{RegVals}\xspace}}
+\newcommand{\MemVals}{\ensuremath{\mtt{MemVals}\xspace}}
+\newcommand{\EdgeWidths}{\ensuremath{\mtt{EdgeWidths}\xspace}}
+\newcommand{\EdgeVals}{\ensuremath{\mtt{EdgeVals}\xspace}}
+\newcommand{\MemLabel}{\ensuremath{\mtt{MemLabel}\xspace}}
+\newcommand{\EdgeLabel}{\ensuremath{\mtt{EdgeLabel}\xspace}}
+\newcommand{\RegLabel}{\ensuremath{\mtt{RegLabel}\xspace}}
+\newcommand{\RegMap}{\ensuremath{\mtt{RegMap}\xspace}}
+\newcommand{\MemMap}{\ensuremath{\mtt{MemMap}\xspace}}
+\newcommand{\Bool}{\ensuremath{\B = \{0, 1 \} } }
+\newcommand{\Bits}{\ensuremath{\mtt{Bits}}\xspace}
+\newcommand{\String}{\ensuremath{\mtt{String}\xspace}}
+\newcommand{\Data}{\ensuremath{\mtt{Data}\xspace}}
+\newcommand{\Node}{\ensuremath{\mtt{Node}\xspace}}
+\newcommand{\Mux}{\ensuremath{\kw{mux}}\xspace}
+\newcommand{\Slice}{\ensuremath{\mtt{Slice}\xspace}}
+\newcommand{\Memory}{\ensuremath{\mtt{Memory}\xspace}}
+\newcommand{\Register}{\ensuremath{\mtt{Register}\xspace}}
+\newcommand{\Input}{\ensuremath{\kw{in}\xspace}}
+\newcommand{\Output}{\ensuremath{\kw{out}\xspace}}
+\newcommand{\Literal}{\ensuremath{\kw{lit}\xspace}}
+\newcommand{\Label}{\ensuremath{\mtt{Label}\xspace}}
+\newcommand{\Edge}{\ensuremath{\mtt{Edge}\xspace}}
+\newcommand{\Graph}{\ensuremath{\mtt{Graph}\xspace}}
+\newcommand{\NodeStore}{\ensuremath{\mtt{NStore}\xspace}}
+\newcommand{\MemStore}{\ensuremath{\mtt{MStore}\xspace}}
+\newcommand{\State}{\ensuremath{\mtt{State}\xspace}}
+\newcommand{\CMemRead}{\ensuremath{\mtt{CMemRead}} \xspace}
+\newcommand{\CMemWrite}{\ensuremath{\mtt{CMemWrite}} \xspace}
+\newcommand{\SMemRead}{\ensuremath{\mtt{SMemRead}} \xspace}
+\newcommand{\SMemWrite}{\ensuremath{\mtt{SMemWrite}} \xspace}
+\newcommand{\MemRead}{\ensuremath{\kw{memR}} \xspace}
+\newcommand{\MemWrite}{\ensuremath{\kw{memW}} \xspace}
+\newcommand{\UpdateReg}{\ensuremath{\mtt{UpdateReg}} \xspace}
+\newcommand{\Reg}{\ensuremath{\kw{reg}} \xspace}
+
+
+
+\newcommand{\BinOp}{\ensuremath{\mtt{BinOp} \xspace}}
+\newcommand{\UnOp}{\ensuremath{\mtt{UnOp} \xspace}}
+
+
+\newcommand{\xor}{\ensuremath{\veebar}}
+\newcommand{\bop}{\ensuremath{\oplus}}
+\newcommand{\uop}{\ensuremath{\odot}}
+\newcommand{\rsh}{>\!\!>}
+\newcommand{\lsh}{<\!\!<}
+\newcommand{\cat}{+\!\!+\xspace}
+
+\newcommand{\dc}{\ensuremath{\underline{\;\;}}\xspace}
