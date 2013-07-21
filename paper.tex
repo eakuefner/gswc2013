@@ -70,9 +70,6 @@
 % manually specify the path to it like:
 % \documentclass[conference]{../sty/IEEEtran}
 
-
-
-
 % Some very useful LaTeX packages include:
 % (uncomment the ones you want to load)
 
@@ -469,7 +466,7 @@ Abstract interpretation can be applied to a hardware design setting through
 the observation that hardware description languages are essentially a particular
 class of
 domain-specific languages (DSLs), that is, programming languages designed to target
-a specific application. Chisel~\cite{asanovic12} is a new environment for
+a specific application. Chisel~\cite{bachrach12} is a new environment for
 designing and testing hardware that has been designed as an embedded DSL on top
 of the Scala programming language. For hardware designers, it provides
 advantages over existing HDLs by bringing advanced features of Scala, such
@@ -480,9 +477,9 @@ unlike either VHDL or Verilog. This reins in the size of the language and
 and allows us to more easily reason about the language and its compilation process
 as a whole.
 
-This work is the latest in a series of collaborations between the Programming Languages
+This work is the latest in a series of collaborations between the PL
 Lab and the ArchLab towards applying techniques in programming languages to provably
-correct hardware design. In this work, we describe the architecture of Critic, an abstract
+correct hardware design. In this note, we describe the architecture of Critic, an abstract
 interpreter we have been designing for Chisel, and our plans for applying it to proving
 particular invariants of hardware designs.
 
@@ -577,18 +574,11 @@ amenable to analysis from Chisel, and second, the method we use to perform analy
 on it.
 
 \subsection{Chisel}
-Chisel itself is merely a set of data structures which hardware designers
-instantiate in a particular way to build components. These data structures
-together represent a directed acyclic graph (DAG) of nodes such as binary operations,
-multiplexers, and
-memory reads and writes. Chisel allows extraction
-of C++ or Verilog from this DAG, for use in simulation or synthesis. 
-When a designer ``programs'' in Chisel, she is actually programming in Scala.
-Figure~\cite{fig:overview} gives an overview of the Chisel/Critic workflow.
 
 \begin{figure}
 \begin{center}
-\begin{tikzpicture}[>=latex',line join=bevel,scale=0.63,]
+\begin{tikzpicture}[>=latex',line join=bevel,scale=0.5,]
+\footnotesize
   \pgfsetlinewidth{1bp}
 %%
 \pgfsetcolor{black}
@@ -656,6 +646,15 @@ Figure~\cite{fig:overview} gives an overview of the Chisel/Critic workflow.
 \label{fig:overview}
 \end{figure}
 
+Chisel itself is simply a set of data structures which hardware designers
+instantiate in a particular way to build components. These data structures
+together represent a directed acyclic graph (DAG) of nodes such as binary operations,
+multiplexers, and
+memory reads and writes. Chisel allows extraction
+of C++ or Verilog from this DAG, for use in simulation or synthesis. 
+When a designer ``programs'' in Chisel, she is actually programming in Scala.
+Figure~\ref{fig:overview} gives an overview of the Chisel/Critic workflow.
+
 To extract a design from a Chisel program, a designer must first compile the program
 using the Scala compiler, producing Java bytecode. At runtime, the designer selects
 a ``backend'', either C++ or Verilog, and runs the Java bytecode, passing a flag for
@@ -670,18 +669,15 @@ analysis. The process of translating Chisel to Critic is more difficult than it 
 since Chisel is still a research project under active development. As well, although both
 projects are implemented in Scala, the developers of Chisel have used an object-oriented,
 imperative style, whereas we prefer a more functional approach. We have had to rectify these
-issues by reading prose descriptions of Chisel and frequently by deferring to the actual
-source code for Chisel.
+issues through extensive reference to prose descriptions of Chisel and frequently by deferring to the actual
+source code. 
 
-The abstract syntax of our IR is shown in Figure~\ref{fig:syntax}.
-The IR mostly mirrors the Chisel IR, providing all of the same major nodes, with a numebr of optimizations.
+%$The abstract syntax of our IR is shown in Figure~\ref{fig:syntax}.
+Our IR mostly mirrors the Chisel IR, providing all of the same major nodes, with a numebr of optimizations.
 It describes a program in the Critic IR as a product of sequences of nodes, edges, memory definitions,
-and register definitions. Memories have positive edge-triggered writes and combinational reads, registers
-delay their inputs by a clock cycle, and the $\downarrow$-subscripted unary operators denote componentwise
-operation over bit vectors. 
-For example, the semantics of the unary operator $\kw{and}_\downarrow$ are to perform a boolean AND
-over all the bits in the input vector. 
+and register definitions. 
 
+\ignore{
 \begin{figure}
 \small
 \begin{gather*}
@@ -703,6 +699,7 @@ N \in \Node &::= \ell^e_1 \bop \ell^e_2 \Rightarrow \ell^e_3 \alt \uop\; \ell^e_
 \caption{Critic IR Abstract Syntax. \note{Need to add reg, mem, edge definitions.}}
 \label{fig:syntax}
 \end{figure}
+}
 
 \subsection{Abstract interpretation}
 To perform abstract interpretation, we begin by formalizing the concrete
@@ -729,26 +726,50 @@ analysis is based on the design of the abstract domains, where a key decision th
 regarding how much information about these sets of states, which could grow exponentially in the worst
 case, to discard.
 
-The advantage of specifying the semantics in the form 
-described above, which we refer to as the \emph{small-step abstract machine} style,
-is principally in the derivation of the abstract semantics. David Van Horn and Matt Might
-show~\cite{vanhorn10} that it is straightforward to derive a computable abstract semantics
-from an arbitrary small-step abstract machine semantics. We apply their techniques in
-constructing the abstract semantics to be applied in this work.
+\section{Deadlock Freedom}
+We will discuss briefly a notion of deadlock freedom for network-on-chip designs, which is the
+first target for Critic.
+Consider a simple packet-switched network with a ring topology on four nodes, 
+where each node $X$ has a register into which packets are injected by the controller $X_i$,
+and a register for use in forwarding packets $X_o$. The network can make one move per clock
+cycle; that is, exactly one node can forward a packet on any given cycle, and ``starting''
+a packet (that is, extracting it from the point where it was injected) is the highest-priority move.
+We will refer to these nodes as $A,B,C$, and $D$, and assume that packets are injected
+to a particular node by some controller, with a particular destination specified.
+Table~\ref{tab:packets} specifies four packets to be forwarded. In the first four cycles,
+packets 1--4 move into B--A's forwarding queues respectively. At this point, no more moves can be made,
+since all the forwarding queues are full, and this is what we define as deadlock. A number of fixes
+exist for addressing this, including for example wormhole routing, in which each node receives an additional
+queue and the routing policy is modified to use this additional queue to avoid conflicts. It is of interest
+whether such solutions are correct, and it is a goal of our analyses to determine this. In other words,
+given a strategy for \emph{deadlock avoidance} and an implementation of it in a hardware design, we would like
+to be able to prove that the particular implementation renders the design \emph{deadlock free}. This will
+require formulating a particular set of invariants that will hold over all runtime configurations for the
+design in question.
 
-\section{Future Directions}
-
-We are currently hard at work on our Scala implementation of the concrete and abstract
-toolchains for Critic, which we hope to apply to analyzing notions such as a new kind of
-deadlock freedom for network-on-chip designs. As well, it may be interesting to use our
-analysis to target programs where previous attempts at applying formal methods to analyze
-properties such as secure information flow fell short.
+\begin{table}
+\begin{center}
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\# & Src & Dst \\ \hline
+1 & $A$ & $C$ \\ \hline
+2 & $B$ & $D$ \\ \hline
+3 & $C$ & $A$ \\ \hline
+4 & $D$ & $B$ \\ \hline
+\end{tabular}
+\end{center}
+\caption{Packet list for routing example}
+\label{tab:packets}
+\end{table}
 
 \section{Conclusion}
 
 In this extended abstract we have detailed Critic, a design for an abstract interpreter
 based on Chisel, a new hardware construction language from UC Berkeley. We described
 our process for working with Chisel, as well as aspects of the design of our analyzer.
+We have detailed a specific client for our analyzer, deadlock freedom, as well as other
+clients with which to validate the analyzer.
 
 % conference papers do not normally have an appendix
 
@@ -775,11 +796,8 @@ our process for working with Chisel, as well as aspects of the design of our ana
 % <OR> manually copy in the resultant .bbl file
 % set second argument of \begin to the number of references
 % (used to reserve space for the reference number labels box)
-\begin{thebibliography}{1}
-
-\item \note{Bibliography goes here.}
-
-\end{thebibliography}
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEabrv,paper}
 
 
 
